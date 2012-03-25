@@ -106,16 +106,13 @@ Origami.Container = function(element) {
     var foldAngle = _foldingPage.foldAngle;
     
     if (_minFoldAngle > 0) {
-      foldAngle = (foldAngle < 90) ? 0 : 180;
+      foldAngle = (foldAngle < 90) ? 0.2 : 179.8;
     } else {
-      foldAngle = (foldAngle < -90) ? -180 : 0;
+      foldAngle = (foldAngle < -90) ? -179.8 : -0.2;
     }
     
-    _foldingPage.$oldPageElement.removeClass('og-transitioning-page');
-    _foldingPage.$newPageElement.removeClass('og-transitioning-page');
-    
-    if ((_minFoldAngle > 0 && foldAngle === 180) ||
-        (_minFoldAngle < 0 && foldAngle === -180)) {
+    if ((_minFoldAngle > 0 && foldAngle === 179.8) ||
+        (_minFoldAngle < 0 && foldAngle === -179.8)) {
       if (_foldingPage.$newPageElement.length > 0) {
         _foldingPage.$oldPageElement.removeClass('og-active');
         self.$activePageElement = _foldingPage.$newPageElement.addClass('og-active');
@@ -125,12 +122,16 @@ Origami.Container = function(element) {
     // TODO: Determine what the correct prefix is for MSIE.
     _foldingPage.$element.bind('webkitTransitionEnd transitionend msTransitionEnd oTransitionEnd transitionEnd', function _transitionEndHandler(evt) {
       _foldingPage.$element.unbind('webkitTransitionEnd transitionend msTransitionEnd oTransitionEnd transitionEnd', _transitionEndHandler);
-      _foldingPage.$element.remove();
-      _foldingPage = null;
       
+      _foldingPage.$oldPageElement.removeClass('og-transitioning-page');
+      _foldingPage.$newPageElement.removeClass('og-transitioning-page');
+      _foldingPage.$element.remove();
+      
+      _foldingPage = null;
       _isEasing = false;
     });
     
+    console.log(foldAngle);
     _foldingPage.setFoldAngle(foldAngle, true);
     
     _isDragging = false;
@@ -165,10 +166,10 @@ Origami.FoldingPage.prototype = {
   $oldPageElement: null,
   $newPageElement: null,
   foldAngle: 0,
-  setFoldAngle: function(foldAngle, isDoneFolding) {
+  setFoldAngle: function(foldAngle, useEasing) {
     this.foldAngle = foldAngle;
     
-    if (isDoneFolding) {
+    if (useEasing) {
       this.$element.css({
         '-webkit-transition': '-webkit-transform 0.3s ease',
         '-moz-transition': '-moz-transform 0.3s ease',
@@ -181,8 +182,6 @@ Origami.FoldingPage.prototype = {
         '-o-transform': 'rotate3d(0, 1, 0, ' + foldAngle + 'deg)',
         'transform': 'rotate3d(0, 1, 0, ' + foldAngle + 'deg)'
       });
-      
-      this.foldAngle = 0;
     } else {
       this.$element.css({
         '-webkit-transition': '-webkit-transform 0.05s linear',
@@ -197,6 +196,9 @@ Origami.FoldingPage.prototype = {
         'transform': 'rotate3d(0, 1, 0, ' + foldAngle + 'deg)'
       });
     }
+  },
+  forceReflow: function() {
+    this.$element[0].offsetWidth;
   }
 };
 
