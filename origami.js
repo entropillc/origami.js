@@ -31,7 +31,7 @@ Origami.Container = function(element) {
   var _foldingPage = null;
   var _lastTouchIdentifier = 0;
   
-  $element.bind('mousedown touchstart', function(evt) {    
+  $element.bind('mousedown touchstart', function(evt) {
     if (_isDragging || _isEasing) return;
     
     _isDragging = true;
@@ -71,18 +71,20 @@ Origami.Container = function(element) {
     if (!_isFolding && Math.abs(_startMouseX - mouseX) > Origami.minimumDragRadius) {
       _isFolding = true;
       
+      $activePageElement = self.$activePageElement = $element.children('.og-active');
+      
       var $newPageElement;
       
       if (_deltaX > 0) {
-        $newPageElement = self.$activePageElement.prev();
+        $newPageElement = $activePageElement.prev();
         _deltaX = _minFoldAngle = 0.2;
         _maxFoldAngle = ($newPageElement.length > 0) ? 179.8 : 1;
-        _foldingPage = new Origami.FoldingPage(self.$activePageElement, $newPageElement);
+        _foldingPage = new Origami.FoldingPage($activePageElement, $newPageElement);
       } else {
-        $newPageElement = self.$activePageElement.next();
+        $newPageElement = $activePageElement.next();
         _minFoldAngle = ($newPageElement.length > 0) ? -179.8 : -1;
         _deltaX = _maxFoldAngle = -0.2;
-        _foldingPage = new Origami.FoldingPage(self.$activePageElement, $newPageElement);
+        _foldingPage = new Origami.FoldingPage($activePageElement, $newPageElement);
       }
     }
     
@@ -115,7 +117,7 @@ Origami.Container = function(element) {
         (_minFoldAngle < 0 && foldAngle === -179.8)) {
       if (_foldingPage.$newPageElement.length > 0) {
         _foldingPage.$oldPageElement.removeClass('og-active');
-        self.$activePageElement = _foldingPage.$newPageElement.addClass('og-active');
+        $activePageElement = self.$activePageElement = _foldingPage.$newPageElement.addClass('og-active');
       }
     }
     
