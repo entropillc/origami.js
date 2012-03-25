@@ -131,7 +131,6 @@ Origami.Container = function(element) {
       _isEasing = false;
     });
     
-    console.log(foldAngle);
     _foldingPage.setFoldAngle(foldAngle, true);
     
     _isDragging = false;
