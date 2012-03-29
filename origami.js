@@ -26,12 +26,15 @@ Origami.Container = function(element) {
   var _startMouseX = -1;
   var _lastMouseX = -1;
   var _deltaX = 0;
+  var _direction = 0;
   var _minFoldAngle = 0;
   var _maxFoldAngle = 0;
   var _foldingPage = null;
   var _lastTouchIdentifier = 0;
   
   $element.bind('mousedown touchstart', function(evt) {
+    evt.preventDefault();
+    
     if (_isDragging || _isEasing) return;
     
     _isDragging = true;
@@ -47,6 +50,8 @@ Origami.Container = function(element) {
   
   $window.bind('mousemove touchmove', function(evt) {
     if (!_isDragging) return;
+    
+    evt.preventDefault();
     
     var mouseX;
     
@@ -67,6 +72,7 @@ Origami.Container = function(element) {
     }
     
     _deltaX = (mouseX - _lastMouseX) / 2;
+    _direction = (_deltaX === 0) ? 0 : (_deltaX > 0) ? 1 : -1;
     
     if (!_isFolding && Math.abs(_startMouseX - mouseX) > Origami.minimumDragRadius) {
       _isFolding = true;
@@ -77,13 +83,13 @@ Origami.Container = function(element) {
       
       if (_deltaX > 0) {
         $newPageElement = $activePageElement.prev();
-        _deltaX = _minFoldAngle = 0.2;
-        _maxFoldAngle = ($newPageElement.length > 0) ? 179.8 : 1;
+        _deltaX = _minFoldAngle = 0.5;
+        _maxFoldAngle = ($newPageElement.length > 0) ? 179.5 : 30;
         _foldingPage = new Origami.FoldingPage($activePageElement, $newPageElement);
       } else {
         $newPageElement = $activePageElement.next();
-        _minFoldAngle = ($newPageElement.length > 0) ? -179.8 : -1;
-        _deltaX = _maxFoldAngle = -0.2;
+        _minFoldAngle = ($newPageElement.length > 0) ? -179.5 : -30;
+        _deltaX = _maxFoldAngle = -0.5;
         _foldingPage = new Origami.FoldingPage($activePageElement, $newPageElement);
       }
     }
@@ -96,8 +102,6 @@ Origami.Container = function(element) {
     }
     
     _lastMouseX = mouseX;
-    
-    evt.preventDefault();
   });
   
   $window.bind('mouseup touchend', function(evt) {
@@ -106,16 +110,17 @@ Origami.Container = function(element) {
     _isEasing = true;
     
     var foldAngle = _foldingPage.foldAngle;
+    var isNewPage = (_foldingPage.$newPageElement.length > 0);
     
     if (_minFoldAngle > 0) {
-      foldAngle = (foldAngle < 90) ? 0.2 : 179.8;
+      foldAngle = (isNewPage && (foldAngle > 90 || _direction === 1)) ? 179.8 : 0.2;
     } else {
-      foldAngle = (foldAngle < -90) ? -179.8 : -0.2;
+      foldAngle = (isNewPage && (foldAngle < -90 || _direction === -1)) ? -179.8 : -0.2;
     }
     
     if ((_minFoldAngle > 0 && foldAngle === 179.8) ||
         (_minFoldAngle < 0 && foldAngle === -179.8)) {
-      if (_foldingPage.$newPageElement.length > 0) {
+      if (isNewPage) {
         _foldingPage.$oldPageElement.removeClass('og-active');
         $activePageElement = self.$activePageElement = _foldingPage.$newPageElement.addClass('og-active');
       }
@@ -127,6 +132,9 @@ Origami.Container = function(element) {
       
       _foldingPage.$oldPageElement.removeClass('og-transitioning-page');
       _foldingPage.$newPageElement.removeClass('og-transitioning-page');
+      
+      if (_foldingPage.$backgroundElement) _foldingPage.$backgroundElement.remove();
+      
       _foldingPage.$element.remove();
       
       _foldingPage = null;
@@ -140,6 +148,7 @@ Origami.Container = function(element) {
     _startMouseX = -1;
     _lastMouseX = -1;
     _deltaX = 0;
+    _direction = 0;
     _minFoldAngle = 0;
     _maxFoldAngle = 0;
     _lastTouchIdentifier = 0;
@@ -158,6 +167,17 @@ Origami.FoldingPage = function($oldPageElement, $newPageElement) {
   this.$oldPageElement = $oldPageElement.addClass('og-transitioning-page');
   this.$newPageElement = $newPageElement.addClass('og-transitioning-page');
   
+  if ($newPageElement.length === 0) {
+    var $parentElement = $oldPageElement.parent();
+    var $backgroundElement = this.$backgroundElement = $('<li/>');
+    
+    if ($oldPageElement[0] === $parentElement.children(':last-child')[0]) {
+      $oldPageElement.after($backgroundElement.addClass('og-background-page-right'));
+    } else {
+      $oldPageElement.before($backgroundElement.addClass('og-background-page-left'));
+    }
+  }
+  
   $element.append('<div class="og-folding-page-copy">' + ($oldPageElement.html() || '') + '</div>');
   $element.append('<div class="og-folding-page-copy">' + ($newPageElement.html() || '') + '</div>');
 };
@@ -166,6 +186,7 @@ Origami.FoldingPage.prototype = {
   $element: null,
   $oldPageElement: null,
   $newPageElement: null,
+  $backgroundElement: null,
   foldAngle: 0,
   setFoldAngle: function(foldAngle, useEasing) {
     this.foldAngle = foldAngle;
