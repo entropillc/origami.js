@@ -4,6 +4,10 @@ if (!window['Origami']) window.Origami = {
   minimumDragRadius: 10
 };
 
+Origami.EventType = {
+  PageChanged: 'OGPageChanged'
+};
+
 Origami.Container = function(element) {
   var $element = this.$element = $(element);
   
@@ -137,6 +141,8 @@ Origami.Container = function(element) {
       
       _foldingPage.$element.remove();
       
+      $element.trigger(Origami.EventType.PageChanged);
+      
       _foldingPage = null;
       _isEasing = false;
     });
@@ -158,7 +164,15 @@ Origami.Container = function(element) {
 Origami.Container.prototype = {
   element: null,
   $element: null,
-  $activePageElement: null
+  $activePageElement: null,
+  getCurrentPage: function() {
+    var $pageElements = this.$element.children(':not(.og-folding-page):not(.og-background-page-right):not(.og-background-page-left)');
+    for (var i = 0, length = $pageElements.length; i < length; i++) if ($($pageElements[i]).hasClass('og-active')) return i;
+    return -1;
+  },
+  getNumberOfPages: function() {
+    return this.$element.children(':not(.og-folding-page):not(.og-background-page-right):not(.og-background-page-left)').length;
+  }
 };
 
 Origami.FoldingPage = function($oldPageElement, $newPageElement) {
@@ -225,8 +239,5 @@ Origami.FoldingPage.prototype = {
 };
 
 $(function() {
-  var $containers = $('.og-container');
-  $containers.each(function(index, element) {
-    new Origami.Container(element);
-  });
+  $('.og-container').each(function(index, element) { new Origami.Container(element); });
 });
